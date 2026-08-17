@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Mizaan Properties"
+description = "A public real-estate marketplace and admin-style management dashboard for browsing, creating, editing, and deleting builds, apartments, and sale-only land listings."
+version = "1.0.0"
+id = "artifacts/real-estate-hub"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25148
+
+[services.development]
+run = "pnpm --filter @workspace/real-estate-hub run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/real-estate-hub", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/real-estate-hub/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25148"
+BASE_PATH = "/"
