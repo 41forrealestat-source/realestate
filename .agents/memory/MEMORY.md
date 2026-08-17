@@ -1,0 +1,1 @@
+- [MongoDB URI handling](mongodb-uri-normalization.md) — Atlas SRV secrets need safe pasted-text cleanup, URL-encoded passwords, and no explicit port.
