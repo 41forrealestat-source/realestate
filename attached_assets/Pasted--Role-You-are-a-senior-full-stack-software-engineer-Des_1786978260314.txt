@@ -1,0 +1,364 @@
+## Role
+
+You are a senior full-stack software engineer. Design and implement a production-ready real estate management platform using **Next.js** and **MongoDB**.
+
+## Project Goal
+
+Build a simple real estate marketplace/management application for listing and managing:
+
+1. **Real Estate Builds / Properties**
+2. **Apartments**
+3. **Lands**
+
+The application must allow users to browse listings and clearly determine whether a property is **for sale** or **for rent**.
+
+### Important business rule
+
+* **Builds/Properties:** can be **for sale or for rent**
+* **Apartments:** can be **for sale or for rent**
+* **Lands:** are **for sale only** and must **never have a rent option**
+
+## Authentication
+
+Do **not** implement authentication or authorization.
+
+The application should work without login, registration, sessions, or user accounts.
+
+For now, owner information is simply stored as information attached to each listing.
+
+## Technology Stack
+
+Use:
+
+* **Next.js** with the App Router
+* **TypeScript**
+* **MongoDB**
+* **Mongoose** or the official MongoDB driver
+* Modern responsive UI
+* Server-side/API routes where appropriate
+* Environment variables for database configuration
+
+Keep the architecture clean and easy to extend later.
+
+## Main Features
+
+### 1. Property Categories
+
+Create three listing categories:
+
+* Builds / Properties
+* Apartments
+* Lands
+
+Each listing should have a clear category.
+
+### 2. Listing Type
+
+Each listing should have:
+
+* `sale`
+* `rent`
+
+However, enforce the following rule:
+
+```text
+land → sale only
+build → sale or rent
+apartment → sale or rent
+```
+
+The UI must not display a "Rent" option when creating or editing a land listing.
+
+The backend must also validate this rule so it cannot be bypassed through an API request.
+
+### 3. Listing Information
+
+Every listing should contain:
+
+* Title
+* Category
+* Listing type: Sale/Rent
+* Description
+* Price
+* Owner information
+* Location
+* Images
+* Created date
+* Updated date
+
+Owner information should include at minimum:
+
+* Owner name
+* Phone number
+* Email
+* Optional additional contact information
+
+For rent listings, make it possible to represent the rental pricing period, such as:
+
+* Monthly
+* Yearly
+
+For example:
+
+```text
+Price: 5,000 SAR
+Listing type: Rent
+Period: Monthly
+```
+
+For a land:
+
+```text
+Price: 850,000 SAR
+Listing type: Sale
+```
+
+### 4. Dashboard
+
+Create an admin-style dashboard even though there is no authentication.
+
+The dashboard should allow the user to:
+
+* View all listings
+* Add a listing
+* Edit a listing
+* Delete a listing
+* View listing details
+* Filter by category
+* Filter by sale/rent
+* Search by title/location
+* Sort listings by price/date
+
+Show summary statistics:
+
+* Total listings
+* Total builds/properties
+* Total apartments
+* Total lands
+* Properties for sale
+* Properties for rent
+
+### 5. Public Listings
+
+Create a clean property browsing interface.
+
+Users should be able to:
+
+* Browse all listings
+* Filter by category
+* Filter by sale/rent
+* Search listings
+* View property cards
+* Open a property detail page
+
+Each property card should clearly show:
+
+* Property image
+* Title
+* Category
+* Sale/Rent badge
+* Price
+* Location
+* Short description
+* Owner/contact information or a button to view contact information
+
+### 6. Property Details
+
+Create a dedicated details page for each listing.
+
+Display:
+
+* Large image/gallery
+* Title
+* Category
+* Sale/Rent status
+* Price
+* Rental period if applicable
+* Description
+* Location
+* Owner information
+* Contact details
+
+For lands, never show rental-related information.
+
+## MongoDB Data Model
+
+Design a clean MongoDB schema.
+
+A listing should conceptually look like:
+
+```ts
+{
+  title: string;
+  category: "build" | "apartment" | "land";
+  listingType: "sale" | "rent";
+  description: string;
+  price: number;
+
+  rentalPeriod?: "monthly" | "yearly";
+
+  owner: {
+    name: string;
+    phone: string;
+    email?: string;
+  };
+
+  location: {
+    address?: string;
+    city: string;
+    district?: string;
+  };
+
+  images: string[];
+
+  createdAt: Date;
+  updatedAt: Date;
+}
+```
+
+Add validation so:
+
+```text
+category === "land"
+```
+
+requires:
+
+```text
+listingType === "sale"
+```
+
+and does not allow `rentalPeriod`.
+
+## API
+
+Create clean API endpoints for:
+
+* Get all listings
+* Get a listing by ID
+* Create a listing
+* Update a listing
+* Delete a listing
+
+Validate all incoming data on the server.
+
+Do not rely only on frontend validation.
+
+Return appropriate HTTP status codes and useful error messages.
+
+## UI/UX
+
+Create a professional, modern real estate interface.
+
+Use:
+
+* Responsive design
+* Property cards
+* Clear category badges
+* Sale/Rent badges
+* Search and filters
+* Empty states
+* Loading states
+* Error states
+* Confirmation before deletion
+* Form validation
+* Mobile-friendly layouts
+
+The interface should make the distinction between **sale** and **rent** immediately obvious.
+
+## Listing Form
+
+Create a reusable form for adding/editing listings.
+
+Fields:
+
+* Title
+* Category
+* Sale/Rent
+* Price
+* Rental period when applicable
+* Description
+* Owner name
+* Owner phone
+* Owner email
+* City
+* District
+* Address
+* Images
+
+When the user selects **Land**:
+
+* Automatically set listing type to **Sale**
+* Disable/remove the Rent option
+* Hide rental period
+* Validate the rule on the server as well
+
+## Architecture
+
+Organize the project into logical areas such as:
+
+```text
+app/
+  dashboard/
+  properties/
+  properties/[id]/
+  api/
+    properties/
+
+components/
+  properties/
+  dashboard/
+  forms/
+  ui/
+
+lib/
+  mongodb/
+  validations/
+
+models/
+  Property.ts
+
+types/
+```
+
+Use reusable components and avoid duplicating business logic.
+
+## Important Requirements
+
+* No authentication
+* No user accounts
+* MongoDB persistence
+* Next.js App Router
+* TypeScript
+* Server-side validation
+* Responsive UI
+* CRUD operations
+* Search and filtering
+* Three property categories
+* Sale/rent support
+* Lands are sale-only
+* Clean and maintainable architecture
+* Environment variables for secrets/configuration
+* Handle database connection efficiently in Next.js development and production
+
+## Deliverables
+
+Provide the implementation in logical steps:
+
+1. Project setup
+2. MongoDB connection
+3. Database model/schema
+4. Validation
+5. API routes
+6. Dashboard
+7. Listing creation/edit form
+8. Property listing page
+9. Property details page
+10. Search and filtering
+11. Error/loading/empty states
+12. Final project structure
+13. Instructions for running the application locally
+
+Before writing code, briefly explain the proposed architecture and important design decisions.
+
+Then implement the project with production-quality TypeScript and clear comments only where they provide useful context.
