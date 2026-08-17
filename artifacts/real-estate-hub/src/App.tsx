@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useMemo, useState } from 'react';
+import { createContext, type FormEvent, useContext, useEffect, useMemo, useState } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
@@ -50,25 +50,304 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
+import logoUrl from '@assets/WhatsApp_Image_2026-04-07_at_4.59.50_PM-removebg-preview_(1)_1786979396929.png';
 
 const queryClient = new QueryClient();
 
-const categoryLabels: Record<Category, string> = { build: 'Villas & builds', apartment: 'Apartments', land: 'Land' };
-const categoryShort: Record<Category, string> = { build: 'Build', apartment: 'Apartment', land: 'Land' };
-const listingTypeLabels: Record<ListingType, string> = { sale: 'For sale', rent: 'For rent' };
+type Language = 'en' | 'ar';
 
-function formatPrice(price: number, listingType: ListingType, rentalPeriod?: RentalPeriod | null) {
-  const value = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(price);
-  if (listingType === 'rent') return `${value} SAR / ${rentalPeriod === 'yearly' ? 'year' : 'month'}`;
-  return `${value} SAR`;
+const translations = {
+  en: {
+    browse: 'Browse properties',
+    operatorDesk: 'Operator desk',
+    language: 'العربية',
+    closeMenu: 'Close navigation',
+    openMenu: 'Open navigation',
+    brandLabel: 'real estate',
+    categoryBuilds: 'Villas & builds',
+    categoryApartments: 'Apartments',
+    categoryLand: 'Land',
+    categoryBuild: 'Build',
+    categoryApartment: 'Apartment',
+    forSale: 'For sale',
+    forRent: 'For rent',
+    month: 'month',
+    year: 'year',
+    sar: 'SAR',
+    recentlyAdded: 'Recently added',
+    somethingWrong: 'Something went wrong. Please try again.',
+    deskPaused: 'The desk is paused',
+    tryAgain: 'Try again',
+    noCloseMatches: 'No close matches',
+    quietShelf: 'A quiet shelf for now',
+    clearFilters: 'Try clearing one of the filters or searching another neighbourhood.',
+    emptyListings: 'Newly available homes will appear here as soon as they are placed on the desk.',
+    previousImage: 'Previous image',
+    nextImage: 'Next image',
+    searchProperties: 'Search properties',
+    searchPlaceholder: 'Search by city, district, address or title',
+    everything: 'Everything',
+    allPlaces: 'All places',
+    currentCollection: 'Current collection',
+    collectionTitle: 'Places with a point of view.',
+    heroEyebrow: 'A better measure of place',
+    heroTitleBefore: 'Find your',
+    heroTitleAccent: 'next',
+    heroTitleAfter: 'address.',
+    heroDescription: 'A considered collection of homes, land, and investment opportunities across Saudi Arabia — sorted for how you actually decide.',
+    principle: 'The 41 forRealEstate principle',
+    principleText: 'Ownership and renting are different decisions. We make the difference easy to see.',
+    manageCollection: 'Manage the collection',
+    clearStartingPoint: 'A clear starting point',
+    startingPointTitle: 'The right property starts with the right question.',
+    startingPointText: 'Looking to own? Start with land and builds. Need flexibility? Browse apartments and rental terms side by side.',
+    backCollection: 'Back to collection',
+    askingRate: 'Asking rate',
+    askingPrice: 'Asking price',
+    ownerContact: 'Owner contact',
+    callOwner: 'Call owner',
+    copyPhone: 'Copy phone',
+    copied: 'Copied',
+    inventoryDesk: 'Inventory desk',
+    dashboardGreeting: 'Good morning, operator.',
+    dashboardDescription: 'Keep the collection accurate, clear and ready for its next enquiry.',
+    addListing: 'Add listing',
+    totalListings: 'Total listings',
+    inventory: 'Inventory',
+    allListings: 'All listings',
+    searchInventory: 'Search inventory',
+    allCategories: 'All categories',
+    saleAndRent: 'Sale & rent',
+    sale: 'Sale',
+    rent: 'Rent',
+    property: 'Property',
+    type: 'Type',
+    location: 'Location',
+    price: 'Price',
+    updated: 'Updated',
+    actions: 'Actions',
+    view: 'View',
+    edit: 'Edit',
+    delete: 'Delete',
+    removeListing: 'Remove this listing?',
+    removeDescription: 'will leave the collection permanently.',
+    keepListing: 'Keep listing',
+    removing: 'Removing…',
+    removeListingButton: 'Remove listing',
+    newListing: 'New listing',
+    refineListing: 'Refine listing',
+    placeSomethingGood: 'Place something good.',
+    editDetails: 'Edit the details.',
+    formDescription: 'The more precise the details, the easier it is for someone to recognise the right place.',
+    theProperty: 'The property',
+    title: 'Title',
+    category: 'Category',
+    listingType: 'Listing type',
+    priceSar: 'Price (SAR)',
+    rentalPeriod: 'Rental period',
+    monthly: 'Monthly',
+    yearly: 'Yearly',
+    description: 'Description',
+    whereItIs: 'Where it is',
+    address: 'Address',
+    optional: 'optional',
+    city: 'City',
+    district: 'District',
+    images: 'Images',
+    imageHelp: 'Paste direct image URLs. The first image becomes the cover.',
+    addAnotherImage: 'Add another image',
+    owner: 'Owner',
+    name: 'Name',
+    phone: 'Phone',
+    email: 'Email',
+    additionalContact: 'Additional contact',
+    reviewFields: 'Review every field before publishing. A clean listing earns a quicker first conversation.',
+    saving: 'Saving listing…',
+    saveChanges: 'Save changes',
+    publishListing: 'Publish listing',
+    cancel: 'Cancel',
+    landSaleOnly: 'Land is always marked for sale.',
+    useTwoCharacters: 'Use at least 2 characters.',
+    addTenCharacters: 'Add at least 10 characters.',
+    validPrice: 'Enter a valid price.',
+    ownerNameRequired: 'Owner name is required.',
+    phoneRequired: 'Phone is required.',
+    cityRequired: 'City is required.',
+    addImage: 'Add at least one image URL.',
+    backDesk: 'Back to operator desk',
+    serverListingError: 'The listing could not be saved.',
+    collectionError: 'We could not load the property collection.',
+    propertyMoved: 'This property may have moved off the desk.',
+    summaryError: 'Unable to load listing summary.',
+    listingError: 'Unable to load listings.',
+  },
+  ar: {
+    browse: 'تصفح العقارات',
+    operatorDesk: 'لوحة الإدارة',
+    language: 'English',
+    closeMenu: 'إغلاق القائمة',
+    openMenu: 'فتح القائمة',
+    brandLabel: 'للعقارات',
+    categoryBuilds: 'فلل ومبانٍ',
+    categoryApartments: 'شقق',
+    categoryLand: 'أراضٍ',
+    categoryBuild: 'مبنى',
+    categoryApartment: 'شقة',
+    forSale: 'للبيع',
+    forRent: 'للإيجار',
+    month: 'شهرياً',
+    year: 'سنوياً',
+    sar: 'ر.س',
+    recentlyAdded: 'أضيف حديثاً',
+    somethingWrong: 'حدث خطأ ما. حاول مرة أخرى.',
+    deskPaused: 'الخدمة متوقفة مؤقتاً',
+    tryAgain: 'حاول مرة أخرى',
+    noCloseMatches: 'لا توجد نتائج مطابقة',
+    quietShelf: 'لا توجد عقارات حالياً',
+    clearFilters: 'جرّب إزالة أحد الفلاتر أو البحث في حي آخر.',
+    emptyListings: 'ستظهر العقارات الجديدة هنا بمجرد إضافتها إلى المجموعة.',
+    previousImage: 'الصورة السابقة',
+    nextImage: 'الصورة التالية',
+    searchProperties: 'البحث عن عقار',
+    searchPlaceholder: 'ابحث بالمدينة أو الحي أو العنوان أو الاسم',
+    everything: 'الكل',
+    allPlaces: 'كل العقارات',
+    currentCollection: 'المجموعة الحالية',
+    collectionTitle: 'أماكن لها طابعها الخاص.',
+    heroEyebrow: 'مقياس أفضل للمكان',
+    heroTitleBefore: 'اعثر على',
+    heroTitleAccent: 'عنوانك',
+    heroTitleAfter: 'القادم.',
+    heroDescription: 'مجموعة مختارة من المنازل والأراضي والفرص الاستثمارية في أنحاء المملكة — مرتبة بالطريقة التي تساعدك على اتخاذ القرار.',
+    principle: 'مبدأ 41 فور ريال استيت',
+    principleText: 'التملك والإيجار قراران مختلفان. نوضح لك الفرق بسهولة.',
+    manageCollection: 'إدارة المجموعة',
+    clearStartingPoint: 'بداية واضحة',
+    startingPointTitle: 'العقار المناسب يبدأ بالسؤال المناسب.',
+    startingPointText: 'تبحث عن التملك؟ ابدأ بالأراضي والمباني. تحتاج إلى مرونة؟ تصفح الشقق وخيارات الإيجار جنباً إلى جنب.',
+    backCollection: 'العودة إلى المجموعة',
+    askingRate: 'قيمة الإيجار',
+    askingPrice: 'السعر المطلوب',
+    ownerContact: 'بيانات المالك',
+    callOwner: 'اتصل بالمالك',
+    copyPhone: 'نسخ الهاتف',
+    copied: 'تم النسخ',
+    inventoryDesk: 'لوحة المخزون',
+    dashboardGreeting: 'صباح الخير.',
+    dashboardDescription: 'حافظ على دقة المجموعة ووضوحها واستعدادها للاستفسار القادم.',
+    addListing: 'إضافة عقار',
+    totalListings: 'إجمالي العقارات',
+    inventory: 'المخزون',
+    allListings: 'كل العقارات',
+    searchInventory: 'البحث في المخزون',
+    allCategories: 'كل التصنيفات',
+    saleAndRent: 'بيع وإيجار',
+    sale: 'بيع',
+    rent: 'إيجار',
+    property: 'العقار',
+    type: 'النوع',
+    location: 'الموقع',
+    price: 'السعر',
+    updated: 'آخر تحديث',
+    actions: 'الإجراءات',
+    view: 'عرض',
+    edit: 'تعديل',
+    delete: 'حذف',
+    removeListing: 'حذف هذا العقار؟',
+    removeDescription: 'سيتم حذفه من المجموعة نهائياً.',
+    keepListing: 'الإبقاء على العقار',
+    removing: 'جارٍ الحذف…',
+    removeListingButton: 'حذف العقار',
+    newListing: 'عقار جديد',
+    refineListing: 'تحسين بيانات العقار',
+    placeSomethingGood: 'أضف عقاراً مميزاً.',
+    editDetails: 'عدّل التفاصيل.',
+    formDescription: 'كلما كانت التفاصيل أدق، أصبح من الأسهل على العميل التعرف على المكان المناسب.',
+    theProperty: 'العقار',
+    title: 'العنوان',
+    category: 'التصنيف',
+    listingType: 'نوع العرض',
+    priceSar: 'السعر (ر.س)',
+    rentalPeriod: 'فترة الإيجار',
+    monthly: 'شهري',
+    yearly: 'سنوي',
+    description: 'الوصف',
+    whereItIs: 'الموقع',
+    address: 'العنوان',
+    optional: 'اختياري',
+    city: 'المدينة',
+    district: 'الحي',
+    images: 'الصور',
+    imageHelp: 'أضف روابط مباشرة للصور. الصورة الأولى ستكون الغلاف.',
+    addAnotherImage: 'إضافة صورة أخرى',
+    owner: 'المالك',
+    name: 'الاسم',
+    phone: 'الهاتف',
+    email: 'البريد الإلكتروني',
+    additionalContact: 'بيانات إضافية',
+    reviewFields: 'راجع جميع الحقول قبل النشر. البيانات الواضحة تساعد على بدء المحادثة بسرعة.',
+    saving: 'جارٍ حفظ العقار…',
+    saveChanges: 'حفظ التغييرات',
+    publishListing: 'نشر العقار',
+    cancel: 'إلغاء',
+    landSaleOnly: 'الأراضي متاحة للبيع فقط.',
+    useTwoCharacters: 'استخدم حرفين على الأقل.',
+    addTenCharacters: 'أضف 10 أحرف على الأقل.',
+    validPrice: 'أدخل سعراً صحيحاً.',
+    ownerNameRequired: 'اسم المالك مطلوب.',
+    phoneRequired: 'رقم الهاتف مطلوب.',
+    cityRequired: 'المدينة مطلوبة.',
+    addImage: 'أضف رابط صورة واحداً على الأقل.',
+    backDesk: 'العودة إلى لوحة الإدارة',
+    serverListingError: 'تعذر حفظ العقار.',
+    collectionError: 'تعذر تحميل مجموعة العقارات.',
+    propertyMoved: 'ربما لم يعد هذا العقار متاحاً.',
+    summaryError: 'تعذر تحميل ملخص العقارات.',
+    listingError: 'تعذر تحميل العقارات.',
+  },
+} as const;
+
+type TranslationKey = keyof typeof translations.en;
+
+const categoryLabels: Record<Category, TranslationKey> = { build: 'categoryBuilds', apartment: 'categoryApartments', land: 'categoryLand' };
+const categoryShort: Record<Category, TranslationKey> = { build: 'categoryBuild', apartment: 'categoryApartment', land: 'categoryLand' };
+const listingTypeLabels: Record<ListingType, TranslationKey> = { sale: 'forSale', rent: 'forRent' };
+
+type LanguageContextValue = { language: Language; setLanguage: (language: Language) => void; t: (key: TranslationKey) => string };
+const LanguageContext = createContext<LanguageContextValue | null>(null);
+
+function LanguageProvider({ children }: { children: React.ReactNode }) {
+  const [language, setLanguage] = useState<Language>(() => {
+    const saved = window.localStorage.getItem('mizaan-language');
+    return saved === 'ar' ? 'ar' : 'en';
+  });
+  useEffect(() => {
+    document.documentElement.lang = language;
+    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+    window.localStorage.setItem('mizaan-language', language);
+  }, [language]);
+  const t = (key: TranslationKey) => translations[language][key];
+  return <LanguageContext.Provider value={{ language, setLanguage, t }}>{children}</LanguageContext.Provider>;
 }
 
-function formatDate(value: string) {
-  if (!value) return 'Recently added';
-  return new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value));
+function useLanguage() {
+  const context = useContext(LanguageContext);
+  if (!context) throw new Error('useLanguage must be used inside LanguageProvider');
+  return context;
 }
 
-function getErrorMessage(error: unknown, fallback = 'Something went wrong. Please try again.') {
+function formatPrice(price: number, listingType: ListingType, rentalPeriod: RentalPeriod | null | undefined, language: Language, t: (key: TranslationKey) => string) {
+  const value = new Intl.NumberFormat(language === 'ar' ? 'ar-SA' : 'en-US', { maximumFractionDigits: 0 }).format(price);
+  if (listingType === 'rent') return `${value} ${t('sar')} / ${t(rentalPeriod === 'yearly' ? 'year' : 'month')}`;
+  return `${value} ${t('sar')}`;
+}
+
+function formatDate(value: string, language: Language, t: (key: TranslationKey) => string) {
+  if (!value) return t('recentlyAdded');
+  return new Intl.DateTimeFormat(language === 'ar' ? 'ar-SA' : 'en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value));
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
   if (error && typeof error === 'object' && 'error' in error) return String(error.error);
   return error instanceof Error ? error.message : fallback;
 }
